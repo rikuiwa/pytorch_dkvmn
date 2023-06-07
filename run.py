@@ -5,6 +5,8 @@ import random
 from torch import nn
 import utils as utils
 from sklearn import metrics
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def train(epoch_num, model, params, optimizer, q_data, qa_data):
     N = int(math.floor(len(q_data) / params.batch_size))
@@ -34,7 +36,7 @@ def train(epoch_num, model, params, optimizer, q_data, qa_data):
         target_1d = target_1d.permute(1, 0)
 
         model.zero_grad()
-        loss, filtered_pred, filtered_target = model.forward(input_q, input_qa, target_1d)
+        q_test, loss, filtered_pred, filtered_target, filtered_student_ability, _, memory, mask = model.forward(input_q, input_qa, target_1d)
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), params.maxgradnorm)
         optimizer.step()
@@ -62,7 +64,7 @@ def train(epoch_num, model, params, optimizer, q_data, qa_data):
     accuracy = metrics.accuracy_score(all_target, all_pred)
     # f1 = metrics.f1_score(all_target, all_pred)
 
-    return epoch_loss/N, accuracy, auc
+    return epoch_loss/N, accuracy, auc, mask
 
 def test(model, params, optimizer, q_data, qa_data):
     N = int(math.floor(len(q_data) / params.batch_size))
@@ -90,7 +92,8 @@ def test(model, params, optimizer, q_data, qa_data):
         target_1d = torch.cat([target_to_1d[i] for i in range(params.batch_size)], 1)
         target_1d = target_1d.permute(1, 0)
 
-        loss, filtered_pred, filtered_target = model.forward(input_q, input_qa, target_1d)
+        q_test, loss, filtered_pred, filtered_target, filtered_student_ability, filtered_question_difficulty, new_memory, _ = model.forward(input_q, input_qa, target_1d)
+
 
         right_target = np.asarray(filtered_target.data.tolist())
         right_pred = np.asarray(filtered_pred.data.tolist())

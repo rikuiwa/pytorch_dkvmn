@@ -5,7 +5,9 @@ import torch.nn.init
 
 def varible(tensor, gpu):
     if gpu >= 0:
-        return torch.autograd.Variable(tensor).cuda()
+        gpu_device = 'mps'
+        tensor = tensor.to(gpu_device)
+        return torch.autograd.Variable(tensor)
     else:
         return torch.autograd.Variable(tensor)
 
